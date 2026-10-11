@@ -3,6 +3,44 @@
 All notable changes to this module. Versions follow semantic versioning;
 before v1 the API may change in minor versions.
 
+## v0.3.0 (2026-10-12)
+
+Additions only; v0.2.0 code keeps working.
+
+- `SpecMirror`: MIoT specifications kept in a local directory (the
+  index, each specification and its translations, as the service
+  answered them), filled once from miot-spec.org (`Fill`,
+  `FillTranslations`, `FillAll`) or by hand (`Add`, `AddTranslations`),
+  then served offline as a `SpecSource` and over HTTP by `Handler` in
+  miot-spec.org's URL and JSON shape, so `HTTPSpecs` and other clients
+  can be pointed at it. With `Upstream` set, what is missing is fetched
+  once and kept; with the service down, the directory still serves.
+- Command `cmd/miiospec` fills and serves a mirror.
+- `HTTPSpecs`: `Fallbacks` (further hosts, such as `SpecMirrorURL`, tried
+  on no answer or a server error), `Status` ("all" for the full index; a
+  released version is still preferred), `Index`, `RawIndex`,
+  `RawInstance`, `Translations` and `RawTranslations`; a nil `HTTP` now
+  uses `http.DefaultClient`. `Translations`, `TextKey` and
+  `ParseTranslations` read the service's multiLanguage texts.
+- mDNS discovery through the application's own browser: `DiscoverMDNS`,
+  `Browser`, `BrowseFunc`, `MDNSEntry`, `MDNSDevice`,
+  `ParseMDNSInstance`, `MDNSService`.
+- `Vacuum`: the Roborock legacy extras `Consumables`,
+  `ResetConsumable`, `CleanSummary` and `CleanRecord` (older list and
+  newer object answers), `DND`, `SetDND`, `DisableDND`, `Timers`,
+  `AddTimer`, `EnableTimer`, `DeleteTimer`, `Timezone`, `Volume`,
+  `SetVolume`, `TestVolume`, `CarpetMode`, `SetCarpetMode`,
+  `SetCarpetModeSettings`, `Spot`; `FanSpeed`, `SetFanSpeed` and `Find`
+  also through a MIoT specification, `FanSpeedPresets` from its value
+  list.
+- `ConfigureWiFi` (miIO.config_router), `SupportsMIoT`, `GetProp` (in
+  slices for devices that take few keys at a time).
+- `DeviceError`: a device's error answer is now this type (same text as
+  before), so callers can read its code.
+- Interop: python-miio's miio simulator with its Roborock file against
+  the vacuum extras, and python-miio's specification client against the
+  mirror's handler.
+
 ## v0.2.0 (2026-10-11)
 
 Additions only; v0.1.0 code keeps working.

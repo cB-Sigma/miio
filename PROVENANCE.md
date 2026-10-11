@@ -54,6 +54,25 @@ History:
   its answer header with an integer device ID where its packet layout
   takes four bytes, so our test peer passes bytes.
 
+- 2026-10-12, v0.3.0: specmirror.go, mdns.go, device.go, vacuum.go and
+  cmd/miiospec were written for this module, and spec.go was extended,
+  each from facts read in the sources below, with our own types, names
+  and control flow. Read for facts only: python-miio's source at commit
+  9a00e08 (GPL-3.0; the roborock vacuum integration for the legacy
+  method names, parameters and answer fields of consumables, clean
+  summary and records, do-not-disturb, timers, time zone, sound volume,
+  custom mode and carpet mode; discovery.py for the mDNS service type
+  and instance name; device.py for miIO.config_router and the MIoT
+  probe; miot_cloud.py and micloud's miotspec.py for how a client walks
+  the index); hass-xiaomi-miot v1.1.5 (Apache-2.0;
+  core/miot_spec.py for the full index with status=all, the
+  multiLanguage translations path, its answer's "data" member and the
+  shape of its keys, and the second host spec.miot-spec.com). No
+  per-model data was taken: python-miio's fan speed preset tables are
+  left out on purpose. The interop runs found one observation, not a
+  difference: python-miio's own Roborock simulator file nests its second
+  timer inside the first record.
+
 ## Sources
 
 | Area (files) | Followed | Read for facts only (no code taken) |
@@ -69,7 +88,11 @@ History:
 | Pushes (push.go) | none published | python-miio (GPL-3.0) push_server: the listener posing as a device, send_data_frame with a scene (trigger with did, extra, key, model, timespan, token; target with command, did, ip, model, the token encrypted with itself), the command's "<model>.<action>:<source>" shape, the answer {"result": 0}, miIO.xdel, the 49-character command limit |
 | Account verification (cloudverify.go) | none published | Xiaomi-cloud-tokens-extractor (MIT) token_extractor.py: notificationUrl and its context, identity/list, sendEmailTicket, verifyEmail with _flag 8, identity/result/check, serviceLoginAuth2/end with the extension-pragma header, the captcha URL, the ick cookie, captCode and code 87001. The SMS step (sendPhoneTicket, verifyPhone, _flag 4) mirrors the e-mail one by the same public descriptions and is the least certain |
 | Account device control (cloudrpc.go) | none published | public descriptions of open-source Mi account clients: miotspec/prop/get, miotspec/prop/set, miotspec/action, home/rpc/<did> |
-| Interop peer (interop/peer) | our own Dockerfile, made-up specification and push.py | python-miio's simulators and packet code, run at test time |
+| Specification mirror and translations (specmirror.go, spec.go, cmd/miiospec) | miot-spec.org's public service: /instances, /instance?type= and /instance/v2/multiLanguage?urn= | hass-xiaomi-miot (Apache-2.0) v1.1.5 core/miot_spec.py: status=all, the translations path and "data" member, the key shape service:NNN[:property:NNN[:valuelist:NNN]] and service:NNN:action:NNN with the value's position in the list, the host spec.miot-spec.com. The directory layout, the fetch-through, the index filter and the handler are our own design |
+| mDNS discovery (mdns.go) | DNS-SD service type _miio._udp | python-miio (GPL-3.0) discovery.py: the instance name is the model with dashes, "_miio" and the device ID |
+| Device requests (device.go) | none published | python-miio (GPL-3.0) device.py: miIO.config_router with ssid, passwd and uid; probing MIoT with one get_properties of service 1 property 1; get_prop asked in slices |
+| Vacuum extras (vacuum.go) | none published | python-miio (GPL-3.0) roborock integration: get_consumable and its four counters, reset_consumable; get_clean_summary (list or object: time, area in mm², count, record IDs); get_clean_record (list or object: begin, end, duration, area, error, complete); get_dnd_timer and its fields, set_dnd_timer, close_dnd_timer; get_timer, set_timer, upd_timer, del_timer and the record layout; get_timezone; get_sound_volume, change_sound_volume, test_sound_volume; get_custom_mode, set_custom_mode; get_carpet_mode, set_carpet_mode and its five fields; find_me; app_spot. The MIoT names (identify, fan-level) are miot-spec.org's standard names |
+| Interop peer (interop/peer) | our own Dockerfile, made-up specification, push.py and spec.py | python-miio's simulators and packet code, run at test time |
 
 No specification or vendor text is reproduced.
 
@@ -98,6 +121,8 @@ these notes being the record.
 | proto_test.go TestMiAccountCrypto | made-up ssecurity and nonce; RC4 round trip and the signature's length |
 | model_test.go | a made-up specification |
 | push_test.go | packets built by this module; the token-encryption rule from python-miio's description |
-| interop/ | python-miio's simulators and packet code at test time |
+| specmirror_test.go, cmd/miiospec/main_test.go | a made-up specification service and made-up specifications and translations |
+| mdns_test.go | made-up instance names in the published shape |
+| interop/ | python-miio's simulators (with its own Roborock file), packet code and specification client at test time |
 
 All tokens, device IDs, accounts and addresses are made-up demo values.

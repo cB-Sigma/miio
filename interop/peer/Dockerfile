@@ -13,4 +13,5 @@ RUN mkdir /python-miio && tar -xzf /python-miio.tgz -C /python-miio --strip-comp
 	&& pip install --no-cache-dir /python-miio
 COPY spec.json /peer/spec.json
 COPY push.py /peer/push.py
+COPY spec.py /peer/spec.py
 WORKDIR /peer

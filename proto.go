@@ -256,7 +256,7 @@ func (c *Client) Call(ctx context.Context, method string, params any) (json.RawM
 		return nil, fmt.Errorf("the device's answer is not JSON: %w", err)
 	}
 	if out.Error != nil {
-		return nil, fmt.Errorf("the device refused %s: %d %s", method, out.Error.Code, out.Error.Message)
+		return nil, &DeviceError{Method: method, Code: out.Error.Code, Message: out.Error.Message}
 	}
 	if out.Result == nil {
 		// An answer without "result" (python-miio's simulators answer
@@ -264,6 +264,18 @@ func (c *Client) Call(ctx context.Context, method string, params any) (json.RawM
 		return json.RawMessage(plain), nil
 	}
 	return out.Result, nil
+}
+
+// DeviceError is an error answer of the device to a request (such as
+// -32601 for a method it does not know).
+type DeviceError struct {
+	Method  string
+	Code    int
+	Message string
+}
+
+func (e *DeviceError) Error() string {
+	return fmt.Sprintf("the device refused %s: %d %s", e.Method, e.Code, e.Message)
 }
 
 // Discover broadcasts a hello and returns device ID → address.

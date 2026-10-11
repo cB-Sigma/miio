@@ -5,9 +5,14 @@
 // miIO packets on UDP port 54321 with the token-derived encryption
 // (Client, Discover), the legacy JSON-RPC methods, the MIoT property and
 // action requests (GetProperties, SetProperties, DoAction) with the
-// models' MIoT specifications (HTTPSpecs) mapped to names (Model), helpers
+// models' MIoT specifications (HTTPSpecs, or SpecMirror for sites
+// without internet, with their translations) mapped to names (Model),
+// discovery by mDNS through the application's browser (DiscoverMDNS),
+// helpers
 // for vacuums, lights, plugs and air purifiers (Vacuum, Light, Plug,
-// Purifier), gateway sub-devices (Gateway), firmware update (Update),
+// Purifier; the vacuum also with the Roborock consumables, history,
+// schedule and settings), Wi-Fi setup (ConfigureWiFi), gateway
+// sub-devices (Gateway), firmware update (Update),
 // device pushes (PushServer), and the Mi account client that lists an
 // account's devices with their tokens, completes its verification steps
 // and controls devices through the account (Cloud).

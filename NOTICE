@@ -1,0 +1,66 @@
+miio (Xiaomi miIO, MIoT and the Mi account device list, in Go)
+Copyright 2026 Abhinav Gautam
+
+This module is licensed under the Apache License, Version 2.0 (LICENSE).
+
+The code was written for SigmaM2M, a oneM2M platform, from public
+descriptions of the protocols (PROVENANCE.md). It contains no code from
+other projects. The source files that come from SigmaM2M (proto.go,
+cloud.go) carry no per-file copyright header, the convention of the code
+they come from; the copyright line above covers them. Files added for
+this module, including miot.go and spec.go, carry "Copyright 2026
+Abhinav Gautam" and "SPDX-License-Identifier: Apache-2.0".
+
+Trademarks
+----------
+
+Xiaomi, Mi, Mi Home and MIoT are trademarks of their owner. This module
+is not made, endorsed or supported by Xiaomi, and is not affiliated with
+it; the names are used only to say which devices and services it talks
+to.
+
+Facts from other projects
+-------------------------
+
+Xiaomi does not document the miIO protocol, the MIoT requests or the Mi
+account API. The facts this module uses were read from public
+descriptions:
+
+- python-miio (github.com/rytilahti/python-miio, GPL-3.0): the miIO
+  packet, the token-derived key and IV, the hello handshake, the MIoT
+  request shapes. python-miio is GPL-licensed: no code was taken from it,
+  and nothing in this module is a translation of it; only facts were
+  used.
+- Xiaomi-cloud-tokens-extractor
+  (github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor; MIT,
+  Copyright (c) 2020 Piotr Machowski): the Mi account sign-in steps, the
+  RC4 and signature parameters, the API endpoints and the server
+  regions. No code was taken.
+- miot-spec.org: the format of MIoT specifications. No specification is
+  bundled; HTTPSpecs fetches them at run time.
+
+The module contains no key, secret or credential of Xiaomi, of the
+author or of any user. The Mi account client signs in with the
+credentials its caller gives.
+
+Interop tests (interop/, a separate test-only module)
+-----------------------------------------------------
+
+interop/peer/Dockerfile downloads python-miio (GPL-3.0) at a fixed
+commit and installs it, with its dependencies, into a python:3.12-slim
+image at test time, to run its device simulators; nothing of python-miio
+is copied into this repository, and it is not linked with this module.
+interop/peer/spec.json is a made-up specification of our own.
+
+Dependencies
+------------
+
+- github.com/cB-Sigma/lanbcast (LAN broadcast helper; Copyright 2026
+  Abhinav Gautam, Apache-2.0, standard library only).
+- The Go standard library (BSD-3-Clause, Copyright The Go Authors).
+
+Test data
+---------
+
+Every token, device ID, account, password and address in the tests and
+the examples is a made-up demo value.

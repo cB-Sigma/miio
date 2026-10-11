@@ -1,0 +1,37 @@
+{
+  "type": "urn:miot-spec-v2:device:air-purifier:0000A007:sigma-purifier1:1",
+  "description": "Air Purifier (made-up test model)",
+  "services": [
+    {
+      "iid": 1,
+      "type": "urn:miot-spec-v2:service:device-information:00007801:sigma-purifier1:1",
+      "description": "Device Information",
+      "properties": [
+        {"iid": 1, "type": "urn:miot-spec-v2:property:manufacturer:00000001:sigma-purifier1:1", "description": "Device Manufacturer", "format": "string", "access": ["read"]}
+      ]
+    },
+    {
+      "iid": 2,
+      "type": "urn:miot-spec-v2:service:air-purifier:00007811:sigma-purifier1:1",
+      "description": "Air Purifier",
+      "properties": [
+        {"iid": 2, "type": "urn:miot-spec-v2:property:on:00000006:sigma-purifier1:1", "description": "Switch Status", "format": "bool", "access": ["read", "write", "notify"]},
+        {"iid": 4, "type": "urn:miot-spec-v2:property:fan-level:00000016:sigma-purifier1:1", "description": "Fan Level", "format": "uint8", "access": ["read", "write", "notify"],
+         "value-list": [{"value": 1, "description": "Level1"}, {"value": 2, "description": "Level2"}, {"value": 3, "description": "Level3"}]},
+        {"iid": 5, "type": "urn:miot-spec-v2:property:mode:00000008:sigma-purifier1:1", "description": "Mode", "format": "uint8", "access": ["read", "write", "notify"],
+         "value-list": [{"value": 0, "description": "Auto"}, {"value": 1, "description": "Sleep"}, {"value": 2, "description": "Favorite"}]}
+      ],
+      "actions": [
+        {"iid": 1, "type": "urn:miot-spec-v2:action:toggle:00002811:sigma-purifier1:1", "description": "Toggle", "in": [], "out": []}
+      ]
+    },
+    {
+      "iid": 3,
+      "type": "urn:miot-spec-v2:service:environment:0000780A:sigma-purifier1:1",
+      "description": "Environment",
+      "properties": [
+        {"iid": 6, "type": "urn:miot-spec-v2:property:pm2.5-density:00000034:sigma-purifier1:1", "description": "PM2.5 Density", "format": "uint16", "access": ["read", "notify"], "unit": "μg/m3"}
+      ]
+    }
+  ]
+}

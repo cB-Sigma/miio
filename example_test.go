@@ -48,6 +48,18 @@ func ExampleGetProperties() {
 	}
 }
 
+// Map a specification to names and check values before sending them.
+func ExampleNewModel() {
+	m, _ := miio.NewModel(&miio.Spec{Type: "urn:miot-spec-v2:device:light:0000A001:demo-lamp:1", Services: []miio.Service{
+		{IID: 2, Type: "urn:miot-spec-v2:service:light:00007802:demo-lamp:1", Properties: []miio.Property{
+			{IID: 2, Type: "urn:miot-spec-v2:property:brightness:0000000D:demo-lamp:1", Format: "uint8",
+				Access: []string{"read", "write"}, ValueRange: []float64{1, 100, 1}}}}}})
+	p, _ := m.Property("light.brightness")
+	_, err := p.Check(150)
+	fmt.Println(p.SIID, p.IID, err != nil)
+	// Output: 2 2 true
+}
+
 func ExampleKeys() {
 	tok, _ := hex.DecodeString("00112233445566778899aabbccddeeff")
 	key, iv := miio.Keys(tok)

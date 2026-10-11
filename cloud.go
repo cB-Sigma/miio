@@ -48,7 +48,7 @@ import (
 //     v2/home/home_device_list a home's devices.
 //
 // Untested against the real Mi account service: the simulator
-// (sim.Cloud) follows the same description.
+// in github.com/cB-Sigma/miio-sim (sim.Cloud) follows the same description.
 
 // Regions are the Mi account's server regions (cn has no prefix; i2 is
 // India's).
@@ -64,15 +64,19 @@ type CloudDevice struct {
 	MAC     string `json:"mac"`
 	Online  bool   `json:"isOnline"`
 	Region  string `json:"region,omitempty"`
+	// ParentID and ParentModel name the gateway of a sub-device.
+	ParentID    string `json:"parent_id,omitempty"`
+	ParentModel string `json:"parent_model,omitempty"`
 }
 
 // Errors of the sign-in.
 var (
 	// ErrCloudAuth: the account refused the user name or password.
 	ErrCloudAuth = errors.New("the Mi account refused the user name or password")
-	// ErrCloudVerify: Xiaomi asks for a captcha or an e-mail or SMS code,
-	// which a server cannot give.
-	ErrCloudVerify = errors.New("the Mi account asks for a verification a server cannot give (a captcha or a code sent by e-mail or SMS)")
+	// ErrCloudVerify: Xiaomi asks for a captcha or an e-mail or SMS code.
+	// The error is a *VerifyError; Captcha, CaptchaCode, SendCode and
+	// VerifyCode complete the sign-in with a person's help.
+	ErrCloudVerify = errors.New("the Mi account asks for a verification (a captcha or a code sent by e-mail or SMS)")
 )
 
 // Cloud signs in to a Mi account and lists its devices.
@@ -84,7 +88,11 @@ type Cloud struct {
 	// (https://<region>.api.io.mi.com/app).
 	APIBase func(region string) string
 	HTTP    *http.Client
+	// CaptchaCode is the text of the captcha image (Captcha) a person
+	// read; the next Login sends it.
+	CaptchaCode string
 
+	verify       *VerifyError
 	mu           sync.Mutex
 	jar          *cookiejar.Jar
 	deviceID     string
@@ -149,7 +157,16 @@ func startJSON(b []byte) (map[string]any, error) {
 }
 
 func (c *Cloud) do(ctx context.Context, follow bool, method, u string, cookies map[string]string) ([]byte, *http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, method, u, nil)
+	return c.doForm(ctx, follow, method, u, cookies, nil)
+}
+
+// doForm is do with a form body (nil for none).
+func (c *Cloud) doForm(ctx context.Context, follow bool, method, u string, cookies map[string]string, form url.Values) ([]byte, *http.Response, error) {
+	var body io.Reader
+	if form != nil {
+		body = strings.NewReader(form.Encode())
+	}
+	req, err := http.NewRequestWithContext(ctx, method, u, body)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -176,7 +193,7 @@ func (c *Cloud) Login(ctx context.Context) error {
 
 func (c *Cloud) login(ctx context.Context) error {
 	c.init()
-	c.ssecurity, c.serviceToken = "", ""
+	c.ssecurity, c.serviceToken, c.verify = "", "", nil
 	base := map[string]string{"sdkVersion": "accountsdk-18.8.15", "deviceId": c.deviceID}
 	ck := func(extra map[string]string) map[string]string {
 		m := map[string]string{}
@@ -212,6 +229,10 @@ func (c *Cloud) login(ctx context.Context) error {
 		q.Set("user", c.Username)
 		q.Set("_sign", sign)
 		q.Set("_json", "true")
+		if c.CaptchaCode != "" {
+			q.Set("captCode", c.CaptchaCode)
+			c.CaptchaCode = ""
+		}
 		b, resp, err = c.do(ctx, false, http.MethodPost, c.AccountBase+"/pass/serviceLoginAuth2?"+q.Encode(), ck(nil))
 		if err != nil {
 			return fmt.Errorf("Mi account sign-in: %w", err)
@@ -226,12 +247,21 @@ func (c *Cloud) login(ctx context.Context) error {
 		if s, _ := m["ssecurity"].(string); len(s) > 4 {
 			c.ssecurity, location = s, str(m["location"])
 			c.userID = numString(m["userId"])
-		} else if str(m["captchaUrl"]) != "" || str(m["notificationUrl"]) != "" {
-			return ErrCloudVerify
+		} else if u := str(m["notificationUrl"]); u != "" {
+			c.verify = &VerifyError{NotificationURL: c.absURL(u)}
+			return c.verify
+		} else if u := str(m["captchaUrl"]); u != "" || numString(m["code"]) == "87001" {
+			c.verify = &VerifyError{CaptchaURL: c.absURL(u), WrongCaptcha: numString(m["code"]) == "87001"}
+			return c.verify
 		} else {
 			return fmt.Errorf("%w (code %v)", ErrCloudAuth, m["code"])
 		}
 	}
+	return c.finish(ctx, location)
+}
+
+// finish fetches the service address, which sets the serviceToken cookie.
+func (c *Cloud) finish(ctx context.Context, location string) error {
 	if location == "" {
 		return errors.New("the Mi account gave no service address")
 	}

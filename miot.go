@@ -55,9 +55,11 @@ type ValueItem struct {
 
 // Action is one action of a service.
 type Action struct {
-	IID  int    `json:"iid"`
-	Type string `json:"type"`
-	In   []int  `json:"in,omitempty"`
+	IID         int    `json:"iid"`
+	Type        string `json:"type"`
+	Description string `json:"description,omitempty"`
+	In          []int  `json:"in,omitempty"`
+	Out         []int  `json:"out,omitempty"`
 }
 
 // URNName is the name part of a MIoT type URN

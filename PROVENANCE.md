@@ -33,6 +33,26 @@ History:
   against python-miio's own simulators. One difference was found and
   fixed: an answer without "result" is now returned whole, as python-miio
   takes it (`TestAnswerWithoutResult`).
+- 2026-10-11, v0.2.0: model.go (specification mapping and value checks),
+  families.go (vacuum, light, plug and purifier helpers), gateway.go,
+  ota.go, push.go, cloudverify.go and cloudrpc.go were written for this
+  module, each from facts read in the sources below, with our own types,
+  names and control flow. python-miio's source at commit 9a00e08 was
+  read for behaviour only (device.py for the firmware update request and
+  states; the lumi gateway integration for the sub-device methods and
+  the device_list layout; the push_server package for the scene layout,
+  the target token and the answer to a push; the roborock, chuangmi,
+  yeelight, philips and zhimi integrations for legacy method names). The
+  identity-check steps were read from token_extractor.py (MIT) on its
+  master branch. The interop runs moved to python:3.12.10-slim and were
+  repeated; python-miio's MIoT simulator and its own packet code were
+  added as peers for the specification mapping and the push server.
+  Two observations, not differences: python-miio's push server hands
+  its handler the action with the listener model's prefix still on
+  ("chuangmi.plug.v3.open"), so `PushServer` strips that prefix when
+  present and accepts it absent; python-miio's own push server builds
+  its answer header with an integer device ID where its packet layout
+  takes four bytes, so our test peer passes bytes.
 
 ## Sources
 
@@ -42,7 +62,14 @@ History:
 | MIoT requests (miot.go) | none published | python-miio (GPL-3.0): get_properties, set_properties and action with did, siid, piid or aiid, and the per-property codes; miot-spec.org: the specification JSON (services, properties with format, access, unit, value range and list, actions) |
 | Specification fetch (spec.go) | miot-spec.org's public service | /instances?status=released and /instance?type= |
 | Mi account (cloud.go) | none published | Xiaomi-cloud-tokens-extractor (MIT) token_extractor.py: serviceLogin, serviceLoginAuth2 with the upper-case MD5 of the password, the location step and serviceToken cookie, the per-call nonce and SHA-256 signed nonce, RC4 with 1024 bytes dropped, the SHA-1 request signature, the API paths for homes and device lists, the regions |
-| Interop peer (interop/peer) | our own Dockerfile and made-up specification | python-miio's simulators, run at test time |
+| Specification mapping (model.go) | miot-spec.org's specification format | the names are the type URNs' name parts; the "service.property" naming, short names and the value checks are our own design |
+| Family helpers (families.go) | none published | python-miio (GPL-3.0): Roborock app_start, app_stop, app_pause, app_charge, get_status and its state and battery fields; Yeelight set_power, set_bright, set_ct_abx, set_rgb; Philips set_power, set_bright, set_cct; chuangmi set_on/set_off (v1) and set_power, the on/power property per model; zhimi set_power, set_mode and the power, mode, aqi, humidity, temp_dec properties. The MIoT names (vacuum start-sweep, battery start-charge, light brightness and so on) are the standard URN names of miot-spec.org |
+| Gateway sub-devices (gateway.go) | none published | python-miio (GPL-3.0): get_device_prop with lumi.0 and device_list (five values per device), get_device_list on lumi.gateway.mgl03, get_device_prop_exp, set_device_prop, get_battery, remove_device; seven type numbers of common sub-devices; parent_id in the account's device list (python-miio's micloud fixture) |
+| Firmware update (ota.go) | none published | python-miio (GPL-3.0) device.py: miIO.ota with mode, install, app_url, file_md5 and proc; miIO.get_ota_progress; miIO.get_ota_state and its four states |
+| Pushes (push.go) | none published | python-miio (GPL-3.0) push_server: the listener posing as a device, send_data_frame with a scene (trigger with did, extra, key, model, timespan, token; target with command, did, ip, model, the token encrypted with itself), the command's "<model>.<action>:<source>" shape, the answer {"result": 0}, miIO.xdel, the 49-character command limit |
+| Account verification (cloudverify.go) | none published | Xiaomi-cloud-tokens-extractor (MIT) token_extractor.py: notificationUrl and its context, identity/list, sendEmailTicket, verifyEmail with _flag 8, identity/result/check, serviceLoginAuth2/end with the extension-pragma header, the captcha URL, the ick cookie, captCode and code 87001. The SMS step (sendPhoneTicket, verifyPhone, _flag 4) mirrors the e-mail one by the same public descriptions and is the least certain |
+| Account device control (cloudrpc.go) | none published | public descriptions of open-source Mi account clients: miotspec/prop/get, miotspec/prop/set, miotspec/action, home/rpc/<did> |
+| Interop peer (interop/peer) | our own Dockerfile, made-up specification and push.py | python-miio's simulators and packet code, run at test time |
 
 No specification or vendor text is reproduced.
 
@@ -69,6 +96,8 @@ these notes being the record.
 | proto_test.go TestMiIOPackets | packets built and opened by this module; checksum and token checks against a changed byte and another token |
 | proto_test.go TestAnswerWithoutResult | a fake device in the test, answering as python-miio's simulator does |
 | proto_test.go TestMiAccountCrypto | made-up ssecurity and nonce; RC4 round trip and the signature's length |
-| interop/ | python-miio's simulators at test time |
+| model_test.go | a made-up specification |
+| push_test.go | packets built by this module; the token-encryption rule from python-miio's description |
+| interop/ | python-miio's simulators and packet code at test time |
 
 All tokens, device IDs, accounts and addresses are made-up demo values.
